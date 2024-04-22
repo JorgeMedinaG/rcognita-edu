@@ -406,7 +406,8 @@ class ControllerOptimalPredictive:
         #####################################################################################################
         ################################# write down here cost-function #####################################
         #####################################################################################################
-
+   
+        run_obj = 1
         return run_obj
 
     def _actor_cost(self, action_sqn, observation):
@@ -554,8 +555,23 @@ class N_CTRL:
         #####################################################################################################
         ########################## write down here nominal controller class #################################
         #####################################################################################################
-
-        return [v,w]
+        def __init__(self, ctrl_bounds) -> list:
+            self.ctrl_bounds = ctrl_bounds
+            self.kappa_rho = 12
+            self.kappa_alpha = 15
+            self.kappa_betha = - 2
+            
+        def pure_loop(self, observation):
+            polar_coord = self._transform_2_polar(observation)
+            v = self.kappa_rho * polar_coord[0]
+            w = (self.kappa_alpha * polar_coord[1]) + (self.kappa_betha * polar_coord[2])
+            return [v,w]
+        
+        def _transform_2_polar(self, observation): 
+            rho = np.sqrt(np.power(observation[0],2) + np.power(observation[1],2))
+            alpha = -observation[2] + np.arctan2(-observation[1], -observation[0])
+            beta = -observation[2] - alpha
+            return [rho, alpha, beta]
 
 
 

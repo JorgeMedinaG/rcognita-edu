@@ -140,7 +140,7 @@ class Animator3WRobotNI(Animator):
         self.fig_sim = plt.figure(figsize=(10,10))    
             
         # xy plane  
-        self.axs_xy_plane = self.fig_sim.add_subplot(221, autoscale_on=False, xlim=(xMin,xMax), ylim=(yMin,yMax),
+        self.axs_xy_plane = self.fig_sim.add_subplot(221, autoscale_on=True,
                                                   xlabel='x [m]', ylabel='y [m]', title='Pause - space, q - quit, click - data cursor')
         self.axs_xy_plane.set_aspect('equal', adjustable='box')
         self.axs_xy_plane.plot([xMin, xMax], [0, 0], 'k--', lw=0.75)   # Help line
