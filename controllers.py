@@ -22,6 +22,7 @@ import math
 # For debugging purposes
 from tabulate import tabulate
 import os
+from trajectory import TrajectoryGenerator
 
 def ctrl_selector(t, observation, action_manual, ctrl_nominal, ctrl_benchmarking, mode):
     """
@@ -355,6 +356,7 @@ class ControllerOptimalPredictive:
             self.Wmin = np.zeros(self.dim_critic) 
             self.Wmax = np.ones(self.dim_critic) 
         self.N_CTRL = N_CTRL(ctrl_bnds)
+        self.S_CTRL = S_CTRL(ctrl_bnds, state_init)
 
     def reset(self,t0):
         """
@@ -543,6 +545,10 @@ class ControllerOptimalPredictive:
                 
                 action = self.N_CTRL.pure_loop(observation)
             
+            elif self.mode == "S_CTRL":
+                
+                action = self.S_CTRL.pure_loop(observation)
+            
             self.action_curr = action
             
             return action    
@@ -574,4 +580,41 @@ class N_CTRL:
             return [rho, alpha, beta]
 
 
+class S_CTRL: 
+
+        def __init__(self, ctrl_bounds, state_init) -> list:
+            self.ctrl_bounds = ctrl_bounds
+            self.trajectory_gen = TrajectoryGenerator(state_init[0], state_init[1])
+            self.accumulator = np.zeros(5)
+            self.kappa_rho_p = 2
+            self.kappa_rho_i = 10
+            self.kappa_delta = 0.5
+            
+        def pure_loop(self, observation):
+           
+            
+            x_front = observation[0] + 0.5 * np.cos(observation[2])
+            y_front = observation[1] + 0.5  * np.sin(observation[2])
+           
+            x_ref, y_ref, theta_ref = self.trajectory_gen.get_nearest_waypoint(x_front, y_front)
+
+            rho = np.sqrt(np.power(0 - x_front,2) + np.power(0 - y_front,2))
+            self.accumulator = np.append(self.accumulator, np.array([rho]))
+            self.accumulator = np.delete(self.accumulator, 0)
+            # v = self.kappa_rho_p * rho + self.kappa_rho_i * np.average(self.accumulator)
+            v=2
+            
+            theta_error = theta_ref - observation[2] 
+            efa = ((y_ref - y_front)*np.cos(theta_ref)) - ((x_ref - x_front) * np.sin(theta_ref))
+            delta = theta_error + np.arctan((self.kappa_delta*efa)/v)
+        
+            if delta < -np.pi: 
+                delta = -np.pi
+            elif delta > np.pi:
+                delta = np.pi
+            else: 
+                delta = delta 
+                
+            return [v,delta]
+        
 

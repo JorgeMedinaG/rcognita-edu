@@ -19,6 +19,8 @@ from svgpath2mpl import parse_path
 from collections import namedtuple
 # from svgpathconverter import SVGPathConverter
 
+from trajectory import TrajectoryGenerator
+
 class Animator:
     """
     Interface class of visualization machinery for simulation of system-controller loops.
@@ -160,6 +162,9 @@ class Animator3WRobotNI(Animator):
         self.text_time_handle = self.axs_xy_plane.text(0.05, 0.95, text_time,
                                                    horizontalalignment='left', verticalalignment='center', transform=self.axs_xy_plane.transAxes)
         self.axs_xy_plane.format_coord = lambda state,observation: '%2.2f, %2.2f' % (state,observation)
+
+        self.trajectory = TrajectoryGenerator(state_init[0],state_init[1])
+        self.trajectory.way_points
         
         # Solution
         sol_max_on_plot = 2*np.max( np.array( [np.abs( xMin), np.abs( yMin), np.abs( yMin), np.abs( yMax)] ) )
@@ -168,6 +173,8 @@ class Animator3WRobotNI(Animator):
         self.axs_sol.plot([t0, t1], [0, 0], 'k--', lw=0.75)   # Help line
         self.line_norm, = self.axs_sol.plot(t0, la.norm([xCoord0, yCoord0]), 'b-', lw=0.5, label=r'$\Vert(x,y)\Vert$ [m]')
         self.line_alpha, = self.axs_sol.plot(t0, alpha0, 'r-', lw=0.5, label=r'$\alpha$ [rad]') 
+        self.axs_xy_plane.plot(self.trajectory.way_points[0], self.trajectory.way_points[1])
+        self.axs_xy_plane.scatter(self.trajectory.way_points[0], self.trajectory.way_points[1], c="#FF3B30")
         self.axs_sol.legend(fancybox=True, loc='upper right')
         self.axs_sol.format_coord = lambda state,observation: '%2.2f, %2.2f' % (state,observation)
         
