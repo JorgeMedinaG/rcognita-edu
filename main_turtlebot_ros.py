@@ -8,22 +8,21 @@ Preset: a 3-wheel robot (kinematic model a. k. a. non-holonomic integrator).
 import os, sys
 PARENT_DIR = os.path.abspath(__file__ + '/../..')
 sys.path.insert(0, PARENT_DIR)
-import rcognita
 import math
 
 
-if os.path.abspath(rcognita.__file__ + "/../..") == PARENT_DIR:
-    info = f"this script is being run using " \
-           f"rcognita ({rcognita.__version__}) " \
-           f"located in cloned repository at '{PARENT_DIR}'. " \
-           f"If you are willing to use your locally installed rcognita, " \
-           f"run this script ('{os.path.basename(__file__)}') outside " \
-           f"'rcognita/presets'."
-else:
-    info = f"this script is being run using " \
-           f"locally installed rcognita ({rcognita.__version__}). " \
-           f"Make sure the versions match."
-print("INFO:", info)
+# if os.path.abspath(rcognita.__file__ + "/../..") == PARENT_DIR:
+#     info = f"this script is being run using " \
+#            f"rcognita ({rcognita.__version__}) " \
+#            f"located in cloned repository at '{PARENT_DIR}'. " \
+#            f"If you are willing to use your locally installed rcognita, " \
+#            f"run this script ('{os.path.basename(__file__)}') outside " \
+#            f"'rcognita/presets'."
+# else:
+#     info = f"this script is being run using " \
+#            f"locally installed rcognita ({rcognita.__version__}). " \
+#            f"Make sure the versions match."
+# print("INFO:", info)
 
 import pathlib
     
@@ -35,12 +34,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-from rcognita import simulator
-from rcognita import systems
-from rcognita import controllers
-from rcognita import loggers
-from rcognita import visuals
-from rcognita.utilities import on_key_press
+import simulator
+import systems
+import controllers
+import loggers
+import visuals
+from utilities import on_key_press
 
 import argparse
 
