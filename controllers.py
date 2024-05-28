@@ -567,7 +567,7 @@ class N_CTRL:
             self.kappa_alpha = 15
             self.kappa_betha = - 2
             
-        def pure_loop(self, observation):
+        def compute_action(self, t, observation):
             polar_coord = self._transform_2_polar(observation)
             v = self.kappa_rho * polar_coord[0]
             w = (self.kappa_alpha * polar_coord[1]) + (self.kappa_betha * polar_coord[2])
@@ -617,4 +617,3 @@ class S_CTRL:
                 
             return [v,delta]
         
-
