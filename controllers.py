@@ -561,22 +561,26 @@ class N_CTRL:
         #####################################################################################################
         ########################## write down here nominal controller class #################################
         #####################################################################################################
-        def __init__(self, ctrl_bounds) -> list:
+        def __init__(self, ctrl_bounds, state_goal) -> list:
             self.ctrl_bounds = ctrl_bounds
             self.kappa_rho = 12
             self.kappa_alpha = 15
             self.kappa_betha = - 2
+            self.state_goal = state_goal
             
         def compute_action(self, t, observation):
-            polar_coord = self._transform_2_polar(observation)
+            polar_coord = self._transform_2_polar(observation, self.state_goal)
             v = self.kappa_rho * polar_coord[0]
             w = (self.kappa_alpha * polar_coord[1]) + (self.kappa_betha * polar_coord[2])
             return [v,w]
         
-        def _transform_2_polar(self, observation): 
-            rho = np.sqrt(np.power(observation[0],2) + np.power(observation[1],2))
-            alpha = -observation[2] + np.arctan2(-observation[1], -observation[0])
-            beta = -observation[2] - alpha
+        def _transform_2_polar(self, observation, state_goal): 
+            delta_x = state_goal[0] - observation[0]
+            delta_y = state_goal[1] - observation[1]
+            delta_theta = state_goal[2] - observation[2]
+            rho = np.sqrt(np.power(delta_x,2) + np.power(delta_y,2))
+            alpha = -delta_theta + np.arctan2(delta_y, delta_x)
+            beta = -delta_theta - alpha
             return [rho, alpha, beta]
 
 

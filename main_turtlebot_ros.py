@@ -245,13 +245,13 @@ parser.add_argument('--state_init', type=str, nargs="+", metavar='state_init',
                 default=['5', '5', '-3*pi/4'],
                 help='Initial state (as sequence of numbers); ' + 
                 'dimension is environment-specific!')
-parser.add_argument('--goal_robot_pose_x', type=float,
+parser.add_argument('--goal_pose_x', type=float,
                     default=3.0,
                     help='x-coordinate of the robot pose.')
-parser.add_argument('--goal_robot_pose_y', type=float,
+parser.add_argument('--goal_pose_y', type=float,
                     default=3.0,
                     help='y-coordinate of the robot pose.')
-parser.add_argument('--goal_robot_pose_theta', type=float,
+parser.add_argument('--goal_pose_theta', type=float,
                     default=0.001,
                     help='orientation angle (in radians) of the robot pose.')
 parser.add_argument('--is_log_data', type=bool,
@@ -404,7 +404,7 @@ alpha_deg_0 = alpha0/2/np.pi
 #----------------------------------------Initialization : : model
 
 #----------------------------------------Initialization : : controller
-my_ctrl_nominal = controllers.N_CTRL(ctrl_bnds)
+my_ctrl_nominal = controllers.N_CTRL(ctrl_bnds, [args.goal_pose_x, args.goal_pose_y,args.goal_pose_theta])
 
 # Predictive optimal controller
 my_ctrl_opt_pred = controllers.ControllerOptimalPredictive(dim_input,
@@ -503,7 +503,7 @@ my_logger = loggers.Logger3WRobotNI()
 run_curr = 1
 datafile = datafiles[0]
         
-ros_preset = ROS_preset(ctrl_mode,state_goal=[args.goal_robot_pose_x, args.goal_robot_pose_y,args.goal_robot_pose_theta],
+ros_preset = ROS_preset(ctrl_mode,state_goal=[args.goal_pose_x, args.goal_pose_y,args.goal_pose_theta],
                         state_init=state_init,
                         my_sys=my_sys,
                         my_ctrl_nominal=my_ctrl_nominal,
