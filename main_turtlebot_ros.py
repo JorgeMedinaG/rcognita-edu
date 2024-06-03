@@ -75,6 +75,11 @@ class ROS_preset:
         self.new_theta = 0
         
         theta_goal = self.state_goal[2]
+
+        self.ctrl_bnds = np.array([
+                [-.22, .22],  # linear velocity limit
+                [-2.84, 2.84] # angular velocity limit
+        ])
         
         # Complete Rotation Matrix
         self.rotation_matrix = np.zeros((3,3))  # here
@@ -89,6 +94,7 @@ class ROS_preset:
         y = msg.pose.pose.position.y
         q = msg.pose.pose.orientation
           
+        rospy.loginfo(msg.pose.pose.position)
         # Transform quat2euler using tf transformations: complete!
         current_rpy = tftr.euler_from_quaternion([q.x, q.y, q.z, q.w])
         
@@ -101,22 +107,24 @@ class ROS_preset:
         theta_goal = self.state_goal[2]
         
         # Complete rotation matrix
-        rotation_matrix = np.array([ [np.cos(theta), -np.sin(theta), 0], 
-                                    [np.sin(theta), np.cos(theta), 0], 
-                                    [0,0,1] 
-                                    ])
+        rotation_matrix = np.array([ 
+            [np.cos(theta_goal), -np.sin(theta_goal), 0], 
+            [np.sin(theta_goal), np.cos(theta_goal), 0], 
+            [0,0,1] 
+        ])
         
         state_matrix = np.vstack([
-            [self.state_goal[0]],
-            [self.state_goal[1]],
-            [0]
+            self.state_goal[0],
+            self.state_goal[1],
+            0
         ]) # [x, y, 0] -- column   
         
         # Compute Transformation matrix 
         
-        t_matrix = np.block([rotation_matrix, state_matrix], 
-                            [np.array([0,0,0,1])]
-                            ) # Complete
+        t_matrix = np.block([
+            [rotation_matrix, state_matrix],
+            [np.array([0, 0, 0, 1])]
+        ])
         inv_t_matrix = np.linalg.inv(t_matrix)
         
         # Complete rotation counter for turtlebot3
@@ -142,9 +150,12 @@ class ROS_preset:
         self.new_state = using tranformations :) Have fun!
         '''
         temp_pos = np.array([x,y,0,1])
-        self.new_state = np.linalg.inv(self.t_matrix) @ temp_pos.T
+        rospy.loginfo("Temp pos: {}".format(temp_pos))
+        # self.new_state = np.linalg.inv(t_matrix) @ temp_pos.T
+        self.new_state = np.dot(inv_t_matrix, np.transpose(temp_pos))
         self.new_state = [self.new_state[0], self.new_state[1], new_theta]
-        
+        rospy.loginfo("New state: {}".format(self.new_state))
+
         self.lock.release()
         
     def spin(self, is_print_sim_step=False, is_log_data=False):
@@ -165,7 +176,7 @@ class ROS_preset:
             
             # action = controllers.ctrl_selector('''COMPLETE!''')
             action = controllers.ctrl_selector(t, 
-                                    self.new_state, 
+                                    self.new_state,
                                     None, 
                                     self.ctrl_nominal, 
                                     self.ctrl_benchm, 
@@ -177,6 +188,9 @@ class ROS_preset:
             
             run_obj = self.ctrl_benchm.run_obj(self.new_state, action)
             accum_obj = self.ctrl_benchm.accum_obj_val
+
+            for k in range(2):
+                action[k] = np.clip(action[k], self.ctrl_bnds[k, 0], self.ctrl_bnds[k, 1])
             
             if is_print_sim_step:
                 self.logger.print_sim_step(t, self.new_state[0], self.new_state[1], self.new_state[2], run_obj, accum_obj, action)
@@ -221,10 +235,11 @@ parser.add_argument('--ctrl_mode', metavar='ctrl_mode', type=str,
                 choices=['manual',
                          'nominal',
                          'MPC',
+                         'N_CTRL'
                          'RQL',
                          'SQL',
                          'JACS'],
-                default='nominal',
+                default='N_CTRL',
                 help='Control mode. Currently available: ' +
                 '----manual: manual constant control specified by action_manual; ' +
                 '----nominal: nominal controller, usually used to benchmark optimal controllers;' +                     
@@ -252,7 +267,7 @@ parser.add_argument('--goal_pose_y', type=float,
                     default=3.0,
                     help='y-coordinate of the robot pose.')
 parser.add_argument('--goal_pose_theta', type=float,
-                    default=0.001,
+                    default=1.57,
                     help='orientation angle (in radians) of the robot pose.')
 parser.add_argument('--is_log_data', type=bool,
                 default=False,
@@ -376,10 +391,10 @@ yMax = 10
 model_est_checks = 0
 
 # Control constraints
-v_min = -25
-v_max = 25
-omega_min = -5
-omega_max = 5
+v_min = -1.5
+v_max = 1
+omega_min = -1
+omega_max = 1
 ctrl_bnds=np.array([[v_min, v_max], [omega_min, omega_max]])
 
 #----------------------------------------Initialization : : system
@@ -404,7 +419,7 @@ alpha_deg_0 = alpha0/2/np.pi
 #----------------------------------------Initialization : : model
 
 #----------------------------------------Initialization : : controller
-my_ctrl_nominal = controllers.N_CTRL(ctrl_bnds, [args.goal_pose_x, args.goal_pose_y,args.goal_pose_theta])
+my_ctrl_nominal = None
 
 # Predictive optimal controller
 my_ctrl_opt_pred = controllers.ControllerOptimalPredictive(dim_input,
@@ -503,7 +518,8 @@ my_logger = loggers.Logger3WRobotNI()
 run_curr = 1
 datafile = datafiles[0]
         
-ros_preset = ROS_preset(ctrl_mode,state_goal=[args.goal_pose_x, args.goal_pose_y,args.goal_pose_theta],
+ros_preset = ROS_preset(ctrl_mode,
+                        state_goal=[args.goal_pose_x, args.goal_pose_y,args.goal_pose_theta],
                         state_init=state_init,
                         my_sys=my_sys,
                         my_ctrl_nominal=my_ctrl_nominal,

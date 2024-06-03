@@ -103,7 +103,7 @@ class ControllerOptimalPredictive:
     buffer_size : : natural number
         Size of the buffer to store data.
     gamma : : number in (0, 1]
-        Discounting factor.
+        Discounting factor. 
         Characterizes fading of running objectives along horizon.
     Ncritic : : natural number
         Critic stack size :math:`N_c`. The critic optimizes the temporal error which is a measure of critic's ability to capture the
@@ -543,7 +543,7 @@ class ControllerOptimalPredictive:
 
             elif self.mode == "N_CTRL":
                 
-                action = self.N_CTRL.pure_loop(observation)
+                action = self.N_CTRL.compute_action(observation)
             
             elif self.mode == "S_CTRL":
                 
@@ -561,26 +561,32 @@ class N_CTRL:
         #####################################################################################################
         ########################## write down here nominal controller class #################################
         #####################################################################################################
-        def __init__(self, ctrl_bounds, state_goal) -> list:
+        def __init__(self, ctrl_bounds) -> list:
             self.ctrl_bounds = ctrl_bounds
-            self.kappa_rho = 12
-            self.kappa_alpha = 15
-            self.kappa_betha = - 2
-            self.state_goal = state_goal
+            self.kappa_rho = 0.1
+            self.kappa_alpha = 0.3
+            self.kappa_betha = - 0.1
             
-        def compute_action(self, t, observation):
-            polar_coord = self._transform_2_polar(observation, self.state_goal)
+            
+        def compute_action(self, observation):
+            polar_coord = self._transform_2_polar(observation)
             v = self.kappa_rho * polar_coord[0]
             w = (self.kappa_alpha * polar_coord[1]) + (self.kappa_betha * polar_coord[2])
+
+            if (np.abs(observation[0]) < 0.1 and np.abs(observation[1]) < 0.1):
+                v = 0
+            if (np.abs(observation[1]) < 0.1):
+                w = 0
             return [v,w]
         
-        def _transform_2_polar(self, observation, state_goal): 
-            delta_x = state_goal[0] - observation[0]
-            delta_y = state_goal[1] - observation[1]
-            delta_theta = state_goal[2] - observation[2]
+        def _transform_2_polar(self, observation): 
+            delta_x = - observation[0]
+            delta_y = - observation[1]
+            theta = observation[2]
+
             rho = np.sqrt(np.power(delta_x,2) + np.power(delta_y,2))
-            alpha = -delta_theta + np.arctan2(delta_y, delta_x)
-            beta = -delta_theta - alpha
+            alpha = -theta + np.arctan2(delta_y, delta_x)
+            beta = -theta - alpha
             return [rho, alpha, beta]
 
 
