@@ -14,6 +14,8 @@ from utilities import to_col_vec
 
 import matplotlib as mpl 
 import matplotlib.pyplot as plt
+from scipy.stats import multivariate_normal
+
 
 from svgpath2mpl import parse_path
 from collections import namedtuple
@@ -139,7 +141,7 @@ class Animator3WRobotNI(Animator):
 
         print(v_min, v_max, omega_min, omega_max)
      
-        self.fig_sim = plt.figure(figsize=(10,10))    
+        self.fig_sim = plt.figure(figsize=(9,7))    
             
         # xy plane  
         self.axs_xy_plane = self.fig_sim.add_subplot(221, autoscale_on=True,
@@ -163,9 +165,15 @@ class Animator3WRobotNI(Animator):
                                                    horizontalalignment='left', verticalalignment='center', transform=self.axs_xy_plane.transAxes)
         self.axs_xy_plane.format_coord = lambda state,observation: '%2.2f, %2.2f' % (state,observation)
 
-        self.trajectory = TrajectoryGenerator(state_init[0],state_init[1])
-        self.trajectory.way_points
-        
+        # self.trajectory = TrajectoryGenerator(state_init[0],state_init[1])
+        # self.trajectory.way_points
+        x, y = np.mgrid[-5:1:.01, -5:1:.01]
+        pos = np.dstack((x, y))
+        rv = multivariate_normal([-1.5, -1], [[4.0, 0], [0, 4.5]])
+        # fig2 = plt.figure()
+        # ax2 = fig2.add_subplot(111)
+        # ax2.contourf(x, y, rv.pdf(pos))
+
         # Solution
         sol_max_on_plot = 2*np.max( np.array( [np.abs( xMin), np.abs( yMin), np.abs( yMin), np.abs( yMax)] ) )
         self.axs_sol = self.fig_sim.add_subplot(222, autoscale_on=False, xlim=(t0,t1), ylim=( -1.1*sol_max_on_plot, 1.1*sol_max_on_plot ), xlabel='t [s]')
@@ -173,8 +181,9 @@ class Animator3WRobotNI(Animator):
         self.axs_sol.plot([t0, t1], [0, 0], 'k--', lw=0.75)   # Help line
         self.line_norm, = self.axs_sol.plot(t0, la.norm([xCoord0, yCoord0]), 'b-', lw=0.5, label=r'$\Vert(x,y)\Vert$ [m]')
         self.line_alpha, = self.axs_sol.plot(t0, alpha0, 'r-', lw=0.5, label=r'$\alpha$ [rad]') 
-        self.axs_xy_plane.plot(self.trajectory.way_points[0], self.trajectory.way_points[1])
-        self.axs_xy_plane.scatter(self.trajectory.way_points[0], self.trajectory.way_points[1], c="#FF3B30")
+        # self.axs_xy_plane.plot(self.trajectory.way_points[0], self.trajectory.way_points[1])
+        # self.axs_xy_plane.scatter(self.trajectory.way_points[0], self.trajectory.way_points[1], c="#FF3B30")
+        self.axs_xy_plane.contourf(x,y, rv.pdf(pos))
         self.axs_sol.legend(fancybox=True, loc='upper right')
         self.axs_sol.format_coord = lambda state,observation: '%2.2f, %2.2f' % (state,observation)
         

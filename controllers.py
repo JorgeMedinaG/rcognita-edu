@@ -408,9 +408,10 @@ class ControllerOptimalPredictive:
         #####################################################################################################
         ################################# write down here cost-function #####################################
         #####################################################################################################
-   
-        run_obj = 1
-        return run_obj
+        gamma = np.concatenate([observation, action])
+        run_obj = gamma.T @ self.run_obj_pars[0] @ gamma
+        rv = multivariate_normal([-1.5, -1], [[2.0, 0.3], [0.3, 2.5]])
+        return run_obj + (rv.pdf([observation[0], observation[1]]) * 2600)
 
     def _actor_cost(self, action_sqn, observation):
         """
